@@ -26,7 +26,19 @@ public class Neo4jSchemaConfig {
 
         // 3. Relationship startTime Index (Supported in Neo4j 5+)
         neo4jClient.query("CREATE INDEX encounter_time_idx IF NOT EXISTS FOR ()-[r:ENCOUNTERED]-() ON (r.startTime)").run();
+
+        // 4. Circle inviteCode Index
+        neo4jClient.query("CREATE INDEX circle_invite_idx IF NOT EXISTS FOR (n:Circle) ON (n.inviteCode)").run();
+
+        // 5. Circle locationId Index
+        neo4jClient.query("CREATE INDEX circle_loc_idx IF NOT EXISTS FOR (n:Circle) ON (n.locationId)").run();
+
+        // 6. Register MEMBER_OF relationship type by touching it in a dummy merge
+        // This suppresses the UnknownRelationshipTypeWarning
+        neo4jClient.query("MERGE (u:User {anonymousId: 'internal-schema-provision'}) " +
+                         "MERGE (c:Circle {inviteCode: 'internal-schema-provision'}) " +
+                         "MERGE (u)-[:MEMBER_OF]->(c)").run();
         
-        log.info("Neo4j Indices initialized successfully.");
+        log.info("Neo4j Indices and Types initialized successfully.");
     }
 }

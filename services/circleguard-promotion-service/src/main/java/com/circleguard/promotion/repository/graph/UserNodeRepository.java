@@ -24,12 +24,12 @@ public interface UserNodeRepository extends Neo4jRepository<UserNode, String> {
     @Query("MATCH (u1:User {anonymousId: $a1})-[r:ENCOUNTERED]-(u2:User {anonymousId: $a2}) RETURN sum(r.duration)")
     Long getCumulativeEncounterDuration(String a1, String a2);
 
-    @Query("MATCH (u1:User {anonymousId: $id})-[:MEMBER_OF]->(c:CircleNode)<-[:MEMBER_OF]-(u2:User) " +
+    @Query("MATCH (u1:User {anonymousId: $id})-[:MEMBER_OF]->(c:Circle)<-[:MEMBER_OF]-(u2:User) " +
            "WHERE u1 <> u2 RETURN count(DISTINCT u2)")
     Long getConfirmedConnectionCount(String id);
 
     @Query("MATCH (u1:User {anonymousId: $id})-[r:ENCOUNTERED]-(u2:User) " +
-           "WHERE NOT (u1)-[:MEMBER_OF]->(:CircleNode)<-[:MEMBER_OF]-(u2) " +
+           "WHERE NOT (u1)-[:MEMBER_OF]->(:Circle)<-[:MEMBER_OF]-(u2) " +
            "AND u1 <> u2 " +
            "RETURN count(DISTINCT u2)")
     Long getUnconfirmedConnectionCount(String id);
