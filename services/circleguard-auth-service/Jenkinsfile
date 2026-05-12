@@ -74,6 +74,7 @@ pipeline {
             post { always { archiveArtifacts allowEmptyArchive: true, artifacts: "$SERVICE_PATH/build/reports/tests/test/**" } }
         }
 
+/*
         stage('Docker Build and Push') {
             steps {
                 sh '''
@@ -83,7 +84,7 @@ pipeline {
                 '''
             }
         }
-
+*/
         stage('Deploy Stage Kubernetes') {
             when { not { branch 'master' } }
             steps {
