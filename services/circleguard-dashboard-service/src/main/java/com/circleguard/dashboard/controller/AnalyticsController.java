@@ -4,6 +4,7 @@ import com.circleguard.dashboard.service.AnalyticsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.time.LocalDate;
 import java.util.*;
 
 @RestController
@@ -16,6 +17,26 @@ public class AnalyticsController {
     @GetMapping("/trends/{locationId}")
     public ResponseEntity<List<Map<String, Object>>> getTrends(@PathVariable UUID locationId) {
         return ResponseEntity.ok(analyticsService.getEntryTrends(locationId));
+    }
+
+    @GetMapping("/{circleId}")
+    public ResponseEntity<?> getAnalytics(@PathVariable UUID circleId) {
+        return ResponseEntity.ok(analyticsService.getAnalyticsData(circleId, null, null));
+    }
+
+    @GetMapping("/{circleId}/range")
+    public ResponseEntity<?> getAnalyticsByDateRange(
+            @PathVariable UUID circleId,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate) {
+        return ResponseEntity.ok(analyticsService.getAnalyticsData(circleId, startDate, endDate));
+    }
+
+    @GetMapping("/{circleId}/metrics")
+    public ResponseEntity<Map<String, Object>> getMetrics(@PathVariable UUID circleId) {
+        Map<String, Object> metrics = new HashMap<>();
+        metrics.put("averageChildrenPerGuardian", analyticsService.calculateAverageChildrenPerGuardian(circleId));
+        return ResponseEntity.ok(metrics);
     }
 
     @GetMapping("/health-board")

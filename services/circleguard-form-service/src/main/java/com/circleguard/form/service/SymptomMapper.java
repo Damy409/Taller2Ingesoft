@@ -14,11 +14,20 @@ public class SymptomMapper {
      * Logic: If any question containing keywords (fever, cough) has a 'YES' response.
      */
     public boolean hasSymptoms(HealthSurvey survey, Questionnaire questionnaire) {
-        if (survey.getResponses() == null || questionnaire == null || questionnaire.getQuestions() == null) {
+        if (survey.getResponses() == null || questionnaire == null) {
             return false;
         }
 
         Map<String, Object> responses = survey.getResponses();
+
+        if (questionnaire.getSymptoms() != null) {
+            Object answer = responses.get(questionnaire.getSymptoms());
+            return "YES".equalsIgnoreCase(String.valueOf(answer));
+        }
+
+        if (questionnaire.getQuestions() == null) {
+            return false;
+        }
         
         return questionnaire.getQuestions().stream()
                 .filter(q -> responses.containsKey(q.getId().toString()))

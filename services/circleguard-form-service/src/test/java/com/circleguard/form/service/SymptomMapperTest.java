@@ -18,41 +18,29 @@ class SymptomMapperTest {
 
     @Test
     void shouldDetectSymptomsFromFever() {
-        UUID questionId = UUID.randomUUID();
-        Question q = Question.builder()
-                .id(questionId)
-                .text("Do you have a fever?")
-                .type(QuestionType.YES_NO)
-                .build();
-        
-        Questionnaire questionnaire = Questionnaire.builder()
-                .questions(List.of(q))
-                .build();
-        
+
         HealthSurvey survey = HealthSurvey.builder()
-                .responses(Map.of(questionId.toString(), "YES"))
+                .responses(Map.of("fever", "YES"))
                 .build();
-        
+
+        Questionnaire questionnaire = Questionnaire.builder()
+                .symptoms("fever")
+                .build();
+
         assertTrue(mapper.hasSymptoms(survey, questionnaire));
     }
 
     @Test
     void shouldNotDetectSymptomsWhenNo() {
-        UUID questionId = UUID.randomUUID();
-        Question q = Question.builder()
-                .id(questionId)
-                .text("Do you have a fever?")
-                .type(QuestionType.YES_NO)
-                .build();
-        
-        Questionnaire questionnaire = Questionnaire.builder()
-                .questions(List.of(q))
-                .build();
-        
+
         HealthSurvey survey = HealthSurvey.builder()
-                .responses(Map.of(questionId.toString(), "NO"))
+                .responses(Map.of("fever", "NO"))
                 .build();
-        
+
+        Questionnaire questionnaire = Questionnaire.builder()
+                .symptoms("fever")
+                .build();
+
         assertFalse(mapper.hasSymptoms(survey, questionnaire));
     }
 }

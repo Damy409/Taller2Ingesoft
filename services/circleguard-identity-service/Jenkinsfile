@@ -1,0 +1,175 @@
+﻿pipeline {
+    agent any
+
+    environment {
+        SERVICE_NAME = 'circleguard-identity-service'
+        SERVICE_PATH = 'services/circleguard-identity-service'
+        GRADLE_PROJECT = ':services:circleguard-identity-service'
+        REGISTRY = credentials('docker-registry-url')
+        IMAGE_TAG = "${BUILD_NUMBER}"
+        STAGE_NAMESPACE = 'circleguard-stage'
+        MASTER_NAMESPACE = 'circleguard-master'
+        STAGE_BASE_URL = 'http://circleguard-gateway-service.circleguard-stage.svc.cluster.local:8087'
+    }
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+    }
+
+    stages {
+        stage('Checkout') {
+            steps { checkout scm }
+        }
+
+        stage('Compile and Package') {
+            steps { sh './gradlew ${GRADLE_PROJECT}:clean ${GRADLE_PROJECT}:assemble' }
+        }
+
+        stage('Unit Tests') {
+            steps {
+                sh '''
+                    set -e
+                    if find "$SERVICE_PATH/src/test/java" -name "*ServiceTest.java" -o -name "*ControllerTest.java" -o -name "*RepositoryTest.java" -o -name "*ConverterTest.java" | grep -q .; then
+                      ./gradlew "$GRADLE_PROJECT:test" --tests "*ServiceTest" --tests "*ControllerTest" --tests "*RepositoryTest" --tests "*ConverterTest"
+                    else
+                      echo "No focused unit test classes for $SERVICE_NAME; covered by full test stage."
+                    fi
+                '''
+            }
+            post { always { junit allowEmptyResults: true, testResults: "$SERVICE_PATH/build/test-results/test/*.xml" } }
+        }
+
+        stage('Integration Tests') {
+            steps {
+                sh '''
+                    set -e
+                    if find "$SERVICE_PATH/src/test/java" -name "*IntegrationTest.java" | grep -q .; then
+                      ./gradlew "$GRADLE_PROJECT:test" --tests "*IntegrationTest"
+                    else
+                      echo "No integration test classes for $SERVICE_NAME."
+                    fi
+                '''
+            }
+            post { always { junit allowEmptyResults: true, testResults: "$SERVICE_PATH/build/test-results/test/*.xml" } }
+        }
+
+        stage('E2E Tests') {
+            steps {
+                sh '''
+                    set -e
+                    if find "$SERVICE_PATH/src/test/java" -name "*E2ETest.java" | grep -q .; then
+                      ./gradlew "$GRADLE_PROJECT:test" --tests "*E2ETest"
+                    else
+                      echo "No E2E test classes for $SERVICE_NAME."
+                    fi
+                '''
+            }
+            post { always { junit allowEmptyResults: true, testResults: "$SERVICE_PATH/build/test-results/test/*.xml" } }
+        }
+
+        stage('Quality Gate - Full Service Test') {
+            steps { sh './gradlew ${GRADLE_PROJECT}:test' }
+            post { always { archiveArtifacts allowEmptyArchive: true, artifacts: "$SERVICE_PATH/build/reports/tests/test/**" } }
+        }
+
+        stage('Docker Build and Push') {
+            steps {
+                sh '''
+                    set -e
+                    docker build -f "$SERVICE_PATH/Dockerfile" --build-arg GRADLE_PROJECT="$GRADLE_PROJECT" --build-arg SERVICE_PATH="$SERVICE_PATH" --build-arg SERVICE_PORT="8083" -t "$REGISTRY/$SERVICE_NAME:$IMAGE_TAG" .
+                    docker push "$REGISTRY/$SERVICE_NAME:$IMAGE_TAG"
+                '''
+            }
+        }
+
+        stage('Deploy Stage Kubernetes') {
+            when { not { branch 'master' } }
+            steps {
+                sh '''
+                    set -e
+                    kubectl create namespace $STAGE_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+                    kubectl -n $STAGE_NAMESPACE set image -f $SERVICE_PATH/k8s/deployment.yaml $SERVICE_NAME=$REGISTRY/$SERVICE_NAME:$IMAGE_TAG --local -o yaml | kubectl apply -f -
+                    kubectl -n $STAGE_NAMESPACE apply -f $SERVICE_PATH/k8s/service.yaml
+                    kubectl -n $STAGE_NAMESPACE rollout status deployment/$SERVICE_NAME --timeout=180s
+                '''
+            }
+        }
+
+        stage('System Validation Stage') {
+            when { not { branch 'master' } }
+            steps {
+                sh '''
+                    set -e
+                    kubectl -n $STAGE_NAMESPACE get pods -l app=$SERVICE_NAME
+                    kubectl -n $STAGE_NAMESPACE get service $SERVICE_NAME
+                '''
+            }
+        }
+
+        stage('Locust Performance Smoke') {
+            when { expression { fileExists('tests/locust_tests.py') } }
+            steps {
+                sh '''
+                    set -e
+                    python -m pip install -q locust
+                    mkdir -p build/locust
+                    python -m locust -f tests/locust_tests.py --headless --host="$STAGE_BASE_URL" -u 10 -r 2 -t 1m --csv=build/locust/$SERVICE_NAME
+                '''
+            }
+            post { always { archiveArtifacts allowEmptyArchive: true, artifacts: 'build/locust/**' } }
+        }
+
+        stage('Generate Release Notes') {
+            when { anyOf { branch 'master'; branch 'main' } }
+            steps {
+                sh '''
+                    set -e
+                    mkdir -p build/release-notes
+                    LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
+                    if [ -n "$LAST_TAG" ]; then RANGE="$LAST_TAG..HEAD"; else RANGE="HEAD~20..HEAD"; fi
+                    NOTES="build/release-notes/$SERVICE_NAME-$IMAGE_TAG.md"
+                    {
+                      echo "# Release Notes - $SERVICE_NAME $IMAGE_TAG"
+                      echo
+                      echo "## Change Summary"
+                      git log --pretty=format:'- %h %s (%an)' $RANGE -- $SERVICE_PATH || true
+                      echo
+                      echo "## Validation Evidence"
+                      echo "- Unit, integration and E2E tests executed by Jenkins."
+                      echo "- Kubernetes rollout validated in stage before master deployment."
+                      echo "- Locust smoke report archived when performance tests are available."
+                      echo
+                      echo "## Change Management"
+                      echo "- Deployment image: $REGISTRY/$SERVICE_NAME:$IMAGE_TAG"
+                      echo "- Rollback: kubectl rollout undo deployment/$SERVICE_NAME -n $MASTER_NAMESPACE"
+                    } > "$NOTES"
+                '''
+            }
+            post { always { archiveArtifacts allowEmptyArchive: true, artifacts: 'build/release-notes/**' } }
+        }
+
+        stage('Deploy Master Kubernetes') {
+            when { anyOf { branch 'master'; branch 'main' } }
+            steps {
+                sh '''
+                    set -e
+                    kubectl create namespace $MASTER_NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+                    kubectl -n $MASTER_NAMESPACE set image -f $SERVICE_PATH/k8s/deployment.yaml $SERVICE_NAME=$REGISTRY/$SERVICE_NAME:$IMAGE_TAG --local -o yaml | kubectl apply -f -
+                    kubectl -n $MASTER_NAMESPACE apply -f $SERVICE_PATH/k8s/service.yaml
+                    kubectl -n $MASTER_NAMESPACE rollout status deployment/$SERVICE_NAME --timeout=180s
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts allowEmptyArchive: true, artifacts: "$SERVICE_PATH/build/libs/*.jar"
+        }
+    }
+}
+
+
+

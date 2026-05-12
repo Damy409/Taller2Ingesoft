@@ -1,8 +1,13 @@
 package com.circleguard.dashboard.service;
 
 import org.springframework.stereotype.Component;
+
+import com.circleguard.dashboard.model.AnalyticsData;
+
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Privacy-First K-Anonymity Engine (Story 7.5, FR-23).
@@ -22,6 +27,7 @@ public class KAnonymityFilter {
     public Map<String, Object> apply(Map<String, Object> stats) {
         return apply(stats, DEFAULT_K);
     }
+
 
     public Map<String, Object> apply(Map<String, Object> stats, int k) {
         if (stats == null) return Map.of();
@@ -62,5 +68,15 @@ public class KAnonymityFilter {
         }
 
         return filtered;
+    }
+
+        /**
+     * Aplica filtro de k-anonimato
+     * Elimina registros con childCount < k
+     */
+    public List<AnalyticsData> applyFilter(List<AnalyticsData> data, int k) {
+        return data.stream()
+                .filter(d -> d.getChildCount() >= k)
+                .collect(Collectors.toList());
     }
 }

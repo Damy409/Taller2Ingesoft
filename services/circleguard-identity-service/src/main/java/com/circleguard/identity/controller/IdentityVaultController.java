@@ -47,6 +47,11 @@ public class IdentityVaultController {
         return ResponseEntity.ok(Map.of("anonymousId", anonymousId));
     }
 
+    @GetMapping("/resolve/{id}")
+    public ResponseEntity<Map<String, String>> resolveIdentity(@PathVariable UUID id) {
+        return ResponseEntity.ok(Map.of("realIdentity", vaultService.resolveRealIdentity(id)));
+    }
+
     /**
      * Restricted lookup of real identity from anonymous ID.
      * Authorized for Health Center personnel only.

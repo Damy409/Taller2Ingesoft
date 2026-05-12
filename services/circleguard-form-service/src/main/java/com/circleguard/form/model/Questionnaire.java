@@ -23,6 +23,10 @@ public class Questionnaire {
 
     private String description;
 
+    private String symptoms;
+
+    private String intensity;
+
     @Column(nullable = false)
     private Integer version;
 

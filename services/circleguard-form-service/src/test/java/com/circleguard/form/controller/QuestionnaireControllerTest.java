@@ -28,36 +28,41 @@ class QuestionnaireControllerTest {
 
     @Test
     void shouldReturnActiveQuestionnaire() throws Exception {
+
         UUID id = UUID.randomUUID();
+
         Questionnaire q = Questionnaire.builder()
                 .id(id)
-                .title("Daily Health Check")
-                .isActive(true)
-                .version(1)
+                .symptoms("fever") // ✅ campo real
+                .intensity("mild") // ✅ campo real
                 .build();
 
-        Mockito.when(questionnaireService.getActiveQuestionnaire()).thenReturn(Optional.of(q));
+        Mockito.when(questionnaireService.getActiveQuestionnaire())
+                .thenReturn(Optional.of(q));
 
         mockMvc.perform(get("/api/v1/questionnaires/active"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.title").value("Daily Health Check"));
+                .andExpect(jsonPath("$.symptoms").value("fever")); // ✅ ajustado
     }
 
     @Test
     void shouldCreateQuestionnaire() throws Exception {
+
         UUID id = UUID.randomUUID();
+
         Questionnaire q = Questionnaire.builder()
                 .id(id)
-                .title("New Survey")
-                .version(1)
+                .symptoms("cough") // ✅ campo real
+                .intensity("moderate") // ✅ campo real
                 .build();
 
-        Mockito.when(questionnaireService.saveQuestionnaire(Mockito.any(Questionnaire.class))).thenReturn(q);
+        Mockito.when(questionnaireService.saveQuestionnaire(Mockito.any(Questionnaire.class)))
+                .thenReturn(q);
 
         mockMvc.perform(post("/api/v1/questionnaires")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"title\": \"New Survey\", \"version\": 1}"))
+                .content("{\"symptoms\": \"cough\", \"intensity\": \"moderate\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.title").value("New Survey"));
+                .andExpect(jsonPath("$.symptoms").value("cough")); // ✅ ajustado
     }
 }
