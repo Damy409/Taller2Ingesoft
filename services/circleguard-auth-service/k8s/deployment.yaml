@@ -13,7 +13,7 @@ spec:
         app: circleguard-auth-service
     spec:
       containers:
-      - name: auth
+      - name: circleguard-auth-service
         image: circleguard-auth-service
         ports:
         - containerPort: 8180
