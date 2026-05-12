@@ -124,7 +124,7 @@ pipeline {
             }
         }
 
-        /*
+        
         stage('Docker Build and Push') {
             steps {
                 sh '''
@@ -141,7 +141,7 @@ pipeline {
                 '''
             }
         }
-        */
+        
 
         stage('Deploy Stage Kubernetes') {
 
