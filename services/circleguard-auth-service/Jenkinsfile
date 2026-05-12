@@ -1,4 +1,4 @@
-pipeline {
+﻿pipeline {
     agent any
 
     environment {
@@ -129,12 +129,7 @@ pipeline {
                 sh '''
                     set -e
 
-                    docker build \
-                      -f "$SERVICE_PATH/Dockerfile" \
-                      --build-arg GRADLE_PROJECT="$GRADLE_PROJECT" \
-                      --build-arg SERVICE_PATH="$SERVICE_PATH" \
-                      --build-arg SERVICE_PORT="8180" \
-                      -t "$REGISTRY/$SERVICE_NAME:$IMAGE_TAG" .
+                    docker build -t "$REGISTRY/$SERVICE_NAME:$IMAGE_TAG" "$SERVICE_PATH"
 
                     docker push "$REGISTRY/$SERVICE_NAME:$IMAGE_TAG"
                 '''

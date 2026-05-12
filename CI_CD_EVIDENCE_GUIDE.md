@@ -390,6 +390,164 @@ Duracion sugerida:
 8. 6:00 - 7:00: explicar ejecucion del pipeline en Jenkins, Release Notes y rollback.
 9. 7:00 - 8:00: mostrar el zip final y cerrar con resultados principales.
 
+## 8.1 Guion verificado de comandos para el video
+
+Estos comandos fueron revisados contra el proyecto actual. Ejecutarlos desde:
+
+```powershell
+cd C:\Users\Damy\Documents\ingesoft\circle-guard-public
+```
+
+### 1. Ejecutar tests
+
+```powershell
+.\gradlew.bat test
+```
+
+Resultado esperado: `BUILD SUCCESSFUL`.
+
+### 2. Construir proyecto
+
+```powershell
+.\gradlew.bat build
+```
+
+Resultado esperado: `BUILD SUCCESSFUL`.
+
+### 3. Verificar jars en build/libs
+
+```powershell
+dir services\circleguard-auth-service\build\libs
+```
+
+Debe aparecer:
+
+- `circleguard-auth-service-1.0.0-SNAPSHOT.jar`
+- `circleguard-auth-service-1.0.0-SNAPSHOT-plain.jar`
+
+### 4. Verificar Docker
+
+```powershell
+docker ps
+docker build -t circleguard-auth-service .
+docker images circleguard-auth-service
+```
+
+El `Dockerfile` de la raiz construye la imagen del auth service usando el jar generado por Gradle.
+
+### 5. Imagen Docker desde carpeta del microservicio
+
+Importante: dentro de `services\circleguard-auth-service` no existe `gradlew.bat`. Por eso el build del servicio se ejecuta desde la raiz:
+
+```powershell
+.\gradlew.bat :services:circleguard-auth-service:build
+cd services\circleguard-auth-service
+dir build\libs
+docker build -t circleguard-auth-service:service-context .
+cd ..\..
+```
+
+### 6. Crear namespaces Kubernetes
+
+Si los namespaces no existen:
+
+```powershell
+kubectl create namespace circleguard-stage
+kubectl create namespace circleguard-master
+```
+
+Si ya existen, usa la version idempotente para que no falle durante el video:
+
+```powershell
+kubectl create namespace circleguard-stage --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace circleguard-master --dry-run=client -o yaml | kubectl apply -f -
+kubectl get namespaces
+docker images
+```
+
+### 7. Verificar Kubernetes
+
+```powershell
+kubectl get nodes
+```
+
+Resultado verificado localmente: nodo `docker-desktop` en estado `Ready`.
+
+### 8. Mostrar archivos de deployment
+
+```powershell
+dir services\circleguard-auth-service\k8s
+type services\circleguard-auth-service\k8s\deployment.yaml
+type services\circleguard-auth-service\k8s\service.yaml
+type services\circleguard-auth-service\k8s\postgres.yaml
+```
+
+`postgres.yaml` se incluye para que el auth service pueda arrancar en Kubernetes durante la demo.
+
+### 9. Aplicar manifiestos y ver pods
+
+```powershell
+cd services\circleguard-auth-service
+kubectl apply -f k8s\
+kubectl get pods -A
+```
+
+Resultado esperado:
+
+- `circleguard-auth-postgres` en `Running`.
+- `circleguard-auth-service` en `Running`.
+
+### 10. Ver deployments
+
+```powershell
+kubectl get deployments -A
+```
+
+Resultado esperado para auth:
+
+- `circleguard-auth-postgres` con `1/1`.
+- `circleguard-auth-service` con `1/1`.
+
+### 11. Ver servicios
+
+```powershell
+kubectl get svc -A
+```
+
+Resultado esperado:
+
+- `circleguard-auth-service` en puerto `8180/TCP`.
+- `circleguard-auth-postgres` en puerto `5432/TCP`.
+
+### 12. Ver logs y recreacion de pod
+
+```powershell
+kubectl get pods -A
+$pod = kubectl get pods -l app=circleguard-auth-service -o jsonpath='{.items[0].metadata.name}'
+kubectl logs $pod --tail=60
+kubectl delete pod $pod
+kubectl get pods -l app=circleguard-auth-service
+```
+
+En los logs debe verse:
+
+- `Tomcat started on port 8180`.
+- `Successfully applied 5 migrations`.
+- `Started AuthServiceApplication`.
+
+Al borrar el pod, Kubernetes debe crear uno nuevo automaticamente.
+
+### 13. Crear Release Notes
+
+```powershell
+cd C:\Users\Damy\Documents\ingesoft\circle-guard-public
+mkdir build\release-notes -Force
+git log --pretty=format:"- %h %s (%an)" > build\release-notes\release.md
+type build\release-notes\release.md
+```
+
+Esto evidencia el resumen automatico de cambios usado por el pipeline para Change Management.
+
 ## 9. Zip de entrega
 
 Crear el zip final desde la raiz del proyecto:

@@ -15,8 +15,15 @@ spec:
       containers:
       - name: circleguard-auth-service
         image: circleguard-auth-service
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8180
         env:
         - name: SPRING_PROFILES_ACTIVE
           value: "dev"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://circleguard-auth-postgres:5432/circleguard_auth"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "admin"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "password"
