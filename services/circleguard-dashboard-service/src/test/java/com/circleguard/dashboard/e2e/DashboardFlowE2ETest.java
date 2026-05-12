@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles("test") // 👈 obligatorio
+@ActiveProfiles("test") 
 public class DashboardFlowE2ETest {
 
     @Autowired

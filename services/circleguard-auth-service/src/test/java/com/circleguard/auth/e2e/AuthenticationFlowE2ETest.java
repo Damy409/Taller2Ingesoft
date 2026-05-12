@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "jwt.secret=my-super-secret-test-key-32-chars-long",
         "jwt.expiration=3600000",
 
-        // 🔥 CLAVE: desactiva LDAP auto config
+        
         "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.ldap.LdapAutoConfiguration"
     }
 )
