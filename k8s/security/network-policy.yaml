@@ -1,0 +1,25 @@
+﻿apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: circleguard-default-deny-ingress
+  namespace: circleguard-stage
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress"]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gateway-to-services
+  namespace: circleguard-stage
+spec:
+  podSelector:
+    matchExpressions:
+    - key: app
+      operator: In
+      values: ["circleguard-auth-service", "circleguard-identity-service", "circleguard-form-service"]
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: circleguard-gateway-service

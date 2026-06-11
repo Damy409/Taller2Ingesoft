@@ -8,6 +8,13 @@
 @rem Set local scope for the variables with windows NT shell
 if "%OS%"=="Windows_NT" setlocal
 
+@rem CircleGuard local video/demo compatibility: Gradle Kotlin DSL used by this project is validated with JDK 21.
+@rem If JDK 21 exists on this workstation, use it automatically before Java discovery.
+if exist "C:\Program Files\Microsoft\jdk-21.0.11.10-hotspot\bin\java.exe" (
+    set "JAVA_HOME=C:\Program Files\Microsoft\jdk-21.0.11.10-hotspot"
+    set "PATH=%JAVA_HOME%\bin;%PATH%"
+)
+
 set DIRNAME=%~dp0
 if "%DIRNAME%" == "" set DIRNAME=.
 set APP_BASE_NAME=%~n0
@@ -82,3 +89,4 @@ exit /b 1
 if "%OS%"=="Windows_NT" endlocal
 
 :omega
+

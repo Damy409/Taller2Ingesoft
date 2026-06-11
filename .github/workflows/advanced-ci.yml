@@ -1,0 +1,35 @@
+﻿name: CircleGuard Advanced CI
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  pull_request:
+    branches: [ master, main, develop ]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Tests
+        run: ./gradlew test
+      - name: Build
+        run: ./gradlew build
+      - name: SonarQube placeholder
+        run: echo "Run sonar-scanner with SONAR_TOKEN in Jenkins/GitHub secrets"
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: table
+          exit-code: '0'
+      - name: OWASP ZAP baseline placeholder
+        run: echo "Run ZAP against stage gateway after deployment"

@@ -1,158 +1,123 @@
-# 🛡️ CircleGuard Monorepo
+# CircleGuard - Proyecto Final IngeSoft V
 
-**Absolute Privacy. High-Speed Containment. Secure Campus.**
+CircleGuard es una arquitectura de microservicios para trazabilidad, control de acceso y contencion sanitaria en campus universitario. El proyecto integra practicas modernas de DevOps, seguridad, pruebas, observabilidad e infraestructura como codigo.
 
-CircleGuard is a state-of-the-art university contact tracing and fencing system designed to identify interconnected contact groups ("Circles") and apply rapid health fences while preserving individual anonymity.
+## Cobertura de requisitos
 
----
+- Metodologia agil y branching documentados.
+- Terraform modular multiambiente.
+- Patrones de diseno, resiliencia, configuracion y feature toggles.
+- CI/CD avanzado con Jenkins/GitHub Actions, SonarQube, Trivy y OWASP ZAP.
+- Pruebas unitarias, integracion, E2E, rendimiento y seguridad.
+- Change Management, release notes, tags y rollback.
+- Prometheus, Grafana, ELK y Jaeger.
+- Seguridad con RBAC, secretos, TLS y NetworkPolicy.
+- Manual de operaciones, costos y guia de sustentacion.
 
-## 🌟 Vision & Mission
+## Microservicios
 
-Our vision is a university campus where health containment speed outpaces lab confirmation timelines without compromising student privacy. CircleGuard leverages campus-native intelligence—class schedules and WiFi infrastructure—to deliver a human-validated, graph-based protection ecosystem.
+| Servicio | Puerto | Responsabilidad |
+|---|---:|---|
+| Auth | 8180 | Autenticacion, JWT, RBAC, handoff visitantes |
+| Identity | 8083 | Vault de anonimizacion |
+| Gateway | 8087 | Validacion de entrada y QR |
+| Promotion | 8088 | Propagacion de estados en grafo Neo4j |
+| Notification | 8082 | Email, SMS, push y listeners Kafka |
+| Form | 8086 | Cuestionarios dinamicos y eventos |
+| File | 8085 | Certificados y documentos |
+| Dashboard | 8084 | Analiticas y privacidad k-anonimato |
 
-### Key Differentiators
-- **Privacy-as-Code**: Zero real-name exposure outside a secure Health Center vault.
-- **Recursive Containment**: Status promotion cascades (Suspect → Probable → Confirmed) that trigger in milliseconds.
-- **Campus Integration**: Smart check-ins using existing WiFi AP triangulation and Bluetooth Low Energy (BLE).
+## Arquitectura
 
----
+Ver [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md).
 
-## 📊 Success Metrics
-
-| Metric | Target | Measurement |
-|:---|:---|:---|
-| **Containment Speed** | < 60 Seconds | Automated test of promotion engine cascade |
-| **Privacy Compliance** | 100% Anonymity | Penetration test on graph database (Zero real names) |
-| **Check-in Adoption** | > 70% | Analytics on scheduled class contact validation |
-| **False Positive Rate** | < 15% | Post-fence surveys of actual vs. suspected contact |
-| **System Uptime** | 99.5% | 7:00 AM – 10:00 PM (Academic Peak Hours) |
-
----
-
-## 🏗️ Architecture Overview
-
-CircleGuard follows a **Microservice Architecture** built on a **Hybrid Data Model**.
-
-### Core Engine
-1. **Status Promotion Machine**: Uses **Neo4j** for recursive graph traversals to identify contacts within a 14-day temporal window.
-2. **Anonymization Vault**: A segregated **PostgreSQL** vault handles salted-hash identity mapping, compliant with **FERPA** regulations.
-3. **Event-Driven Core**: **Apache Kafka** manages asynchronous status changes, audit logs, and notification dispatches.
-
-### Services Directory
-- **Auth Service**: Dual-chain LDAP (University) / Local (Guest) auth with Dynamic RBAC.
-- **Identity Service**: Cryptographic vault for anonymizing real identities.
-- **Promotion Service**: The status engine (Recursive Graph Processing).
-- **Notification Service**: Multi-channel dispatcher (Push/Email/SMS).
-- **Form Service**: Dynamic health questionnaire engine.
-- **Gateway Service**: Campus entry validation via signed, time-limited QR tokens.
-- **Dashboard Service**: Geospatial hotspot analytics (Privacy-preserving).
-- **File Service**: Secure certificate and document storage (S3-compatible).
-
----
-
-## 🛠️ Technical Stack
-
-| Layer | Technology | Rationale |
-|:---|:---|:---|
-| **Backend** | Spring Boot 4 / Java 21 | Enterprise-grade maturity & low-latency Jakarta EE support. |
-| **Graph DB** | Neo4j 5.26 | High-performance recursive traversals unreachable with SQL. |
-| **Relational DB**| PostgreSQL 16 | ACID compliant storage for identity and configuration. |
-| **Message Bus** | Apache Kafka 7.6 | Persistent, audit-trailed event log for status dispatches. |
-| **Caching** | Redis 7.2 | L2 distributed cache for rapid entry-gate status validation. |
-| **Mobile/Web** | Expo (React Native) | Unified codebase across iOS, Android, and Browser. |
-| **Infra** | Kubernetes | Orchestration for high availability and auto-scaling. |
-
----
-
-## 🗺️ Roadmap
-
-### Phase 1: MVP — The Intelligence Core (Current)
-- [x] Status Promotion Machine (Suspect → Probable → Confirmed).
-- [x] Temporal graph with 14-day TTL edges.
-- [x] Multi-channel fence notifications (Push/Email/SMS).
-- [ ] Health Center de-identification console.
-
-### Phase 2: Growth — Spatial Intelligence
-- [ ] WiFi AP triangulation integration.
-- [ ] Campus entry validation (Gatekeeper) QR integration.
-- [ ] LMS integration for "Remote Attendance" status automation.
-
-### Phase 3: Vision — Full Ecosystem
-- [ ] Off-campus circle detection via P2P Bluetooth.
-- [ ] Global Health Dashboard with hotspot visualization.
-- [ ] Lab API bridge for automated test result ingestion.
-
----
-
-## 💻 Local Development
-
-### 1. Infrastructure
-Ensure Docker is installed, then start the middleware stack:
-```bash
-docker-compose -f docker-compose.dev.yml up -d
-```
-*Middleware includes: PostgreSQL, Neo4j, Kafka, Zookeeper, Redis, and OpenLDAP.*
-
-### 2. Build & Run
-CircleGuard uses Gradle for parallel builds across services:
-```bash
-# Start all microservices in parallel
-./gradlew bootRun --parallel
-
-# Start a specific service
-./gradlew :services:<service-name>:bootRun
+```mermaid
+flowchart LR
+  App[Mobile/Web] --> Gateway
+  Gateway --> Auth
+  Auth --> Identity
+  App --> Form
+  Form --> Kafka
+  Kafka --> Promotion
+  Promotion --> Neo4j
+  Kafka --> Notification
+  Dashboard --> Promotion
+  Prometheus --> Gateway
 ```
 
-### 3. API Exploration
-Every service exposes an OpenAPI 3.0 interface. Once running, visit:
-`http://localhost:<service-port>/swagger-ui/index.html`
+## Ejecucion local
 
----
-
-## 📱 Frontend Development
-
-The frontend is built using **Expo (React Native)**, supporting iOS, Android, and Web from a single codebase located in `/mobile`.
-
-### 1. Prerequisites
-Ensure you have Node.js installed and dependencies loaded:
-```bash
-cd mobile
-npm install
+```powershell
+.\gradlew.bat test
+.\gradlew.bat build
 ```
 
-### 2. Run the Application
-You can run the app in various modes depending on your target platform:
+## Docker demo Auth
 
-| Platform | Command | Notes |
-|:---|:---|:---|
-| **Development Menu** | `npm run start` | Opens the Expo Go start-up menu. |
-| **Android** | `npm run android` | Requires Android Studio / Emulator or a connected device. |
-| **iOS** | `npm run ios` | Requires macOS with Xcode / Simulator installed. |
-| **Web Browser** | `npm run web` | Launches the dashboard/app in your default browser. |
-
-### 3. Testing
-To run frontend unit and component tests:
-```bash
-npm run test
+```powershell
+docker build -t circleguard-auth-service .
+docker images circleguard-auth-service
 ```
 
----
+## Kubernetes demo Auth
 
-## 🧪 Testing
+```powershell
+cd services\circleguard-auth-service
+kubectl apply -f k8s\
+kubectl get pods -A
+kubectl logs <pod-auth> --tail=80
+```
 
-We maintain high system integrity via multi-level testing:
+## Terraform
 
-| Command | Scope |
-|:---|:---|
-| `./gradlew test` | Full system suite (Unit + Integration) |
-| `./gradlew :services:<name>:test` | Single service testing |
+```bash
+cd infra/terraform/envs/dev
+terraform init
+terraform plan -var='registry=<registry-url>'
+```
 
-**Note**: Integration tests use **Testcontainers** to spawn ephemeral Neo4j and PostgreSQL instances for zero-side-effect validation.
+## Observabilidad
 
----
+```powershell
+kubectl apply -f k8s\observability\
+kubectl -n observability get pods
+```
 
-## 🔐 Privacy & Compliance
+## Seguridad
 
-- **FERPA Compliance**: Student identities are never stored in the contact graph.
-- **Right to be Forgotten**: Users can trigger complete data purging via the Identity Vault.
-- **Temporal Privacy**: All contact edges are automatically purged after 14 days.
+- RBAC: `k8s/security/rbac-stage.yaml`
+- NetworkPolicy: `k8s/security/network-policy.yaml`
+- TLS ingress: `k8s/security/tls-ingress.yaml`
+- Secret example: `k8s/security/secrets-example.yaml`
+- ZAP baseline: `security/zap-baseline.yaml`
+
+## Documentacion principal
+
+- Agile y branching: [docs/agile/AGILE_AND_BRANCHING.md](docs/agile/AGILE_AND_BRANCHING.md)
+- Arquitectura: [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md)
+- Patrones: [docs/architecture/DESIGN_PATTERNS.md](docs/architecture/DESIGN_PATTERNS.md)
+- Terraform: [infra/terraform/README.md](infra/terraform/README.md)
+- Pruebas: [docs/testing/TEST_ANALYSIS.md](docs/testing/TEST_ANALYSIS.md)
+- Change Management: [docs/release/CHANGE_MANAGEMENT.md](docs/release/CHANGE_MANAGEMENT.md)
+- Operaciones: [docs/operations/OPERATIONS_MANUAL.md](docs/operations/OPERATIONS_MANUAL.md)
+- Costos: [docs/operations/INFRA_COSTS.md](docs/operations/INFRA_COSTS.md)
+- Sustentacion: [docs/presentation/SUSTENTACION_PROYECTO_FINAL.md](docs/presentation/SUSTENTACION_PROYECTO_FINAL.md)
+- Evidencia CI/CD: [CI_CD_EVIDENCE_GUIDE.md](CI_CD_EVIDENCE_GUIDE.md)
+- Jenkins paso a paso: [docs/ci-cd/JENKINS_PIPELINE_GUIDE.md](docs/ci-cd/JENKINS_PIPELINE_GUIDE.md)
+- Revision de completitud: [docs/presentation/PROJECT_COMPLETION_REVIEW.md](docs/presentation/PROJECT_COMPLETION_REVIEW.md)
+
+## Release notes
+
+```powershell
+mkdir build\release-notes -Force
+git log --pretty=format:"- %h %s (%an)" > build\release-notes\release.md
+```
+
+## Rollback
+
+```powershell
+kubectl rollout undo deployment/<microservicio> -n circleguard-master
+```
+
+
+

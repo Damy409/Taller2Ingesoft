@@ -1,0 +1,10 @@
+﻿# OWASP ZAP baseline configuration
+# Run after stage deployment:
+# docker run --rm -t owasp/zap2docker-stable zap-baseline.py -t http://<gateway-stage-url> -r zap-report.html
+rules:
+  - id: 10021
+    action: WARN
+    reason: X-Content-Type-Options should be enforced by gateway in production.
+  - id: 10020
+    action: WARN
+    reason: CSP is reviewed during hardening.

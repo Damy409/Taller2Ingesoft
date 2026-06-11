@@ -1,0 +1,22 @@
+﻿apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: circleguard-tls-ingress
+  namespace: circleguard-stage
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  tls:
+  - hosts: ["circleguard.local"]
+    secretName: circleguard-tls
+  rules:
+  - host: circleguard.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: circleguard-gateway-service
+            port:
+              number: 8087
