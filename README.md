@@ -1,5 +1,7 @@
 # CircleGuard - Proyecto Final IngeSoft V
 
+Damy Villegas - A00398942
+
 CircleGuard es una arquitectura de microservicios para trazabilidad, control de acceso y contencion sanitaria en campus universitario. El proyecto integra practicas modernas de DevOps, seguridad, pruebas, observabilidad e infraestructura como codigo.
 
 ## Cobertura de requisitos
@@ -27,23 +29,6 @@ CircleGuard es una arquitectura de microservicios para trazabilidad, control de 
 | File | 8085 | Certificados y documentos |
 | Dashboard | 8084 | Analiticas y privacidad k-anonimato |
 
-## Arquitectura
-
-Ver [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md).
-
-```mermaid
-flowchart LR
-  App[Mobile/Web] --> Gateway
-  Gateway --> Auth
-  Auth --> Identity
-  App --> Form
-  Form --> Kafka
-  Kafka --> Promotion
-  Promotion --> Neo4j
-  Kafka --> Notification
-  Dashboard --> Promotion
-  Prometheus --> Gateway
-```
 
 ## Ejecucion local
 
@@ -91,33 +76,18 @@ kubectl -n observability get pods
 - Secret example: `k8s/security/secrets-example.yaml`
 - ZAP baseline: `security/zap-baseline.yaml`
 
-## Documentacion principal
-
-- Agile y branching: [docs/agile/AGILE_AND_BRANCHING.md](docs/agile/AGILE_AND_BRANCHING.md)
-- Arquitectura: [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md)
-- Patrones: [docs/architecture/DESIGN_PATTERNS.md](docs/architecture/DESIGN_PATTERNS.md)
-- Terraform: [infra/terraform/README.md](infra/terraform/README.md)
-- Pruebas: [docs/testing/TEST_ANALYSIS.md](docs/testing/TEST_ANALYSIS.md)
-- Change Management: [docs/release/CHANGE_MANAGEMENT.md](docs/release/CHANGE_MANAGEMENT.md)
-- Operaciones: [docs/operations/OPERATIONS_MANUAL.md](docs/operations/OPERATIONS_MANUAL.md)
-- Costos: [docs/operations/INFRA_COSTS.md](docs/operations/INFRA_COSTS.md)
-- Sustentacion: [docs/presentation/SUSTENTACION_PROYECTO_FINAL.md](docs/presentation/SUSTENTACION_PROYECTO_FINAL.md)
-- Evidencia CI/CD: [CI_CD_EVIDENCE_GUIDE.md](CI_CD_EVIDENCE_GUIDE.md)
-- Jenkins paso a paso: [docs/ci-cd/JENKINS_PIPELINE_GUIDE.md](docs/ci-cd/JENKINS_PIPELINE_GUIDE.md)
-- Revision de completitud: [docs/presentation/PROJECT_COMPLETION_REVIEW.md](docs/presentation/PROJECT_COMPLETION_REVIEW.md)
-
 ## Release notes
 
 ```powershell
 mkdir build\release-notes -Force
 git log --pretty=format:"- %h %s (%an)" > build\release-notes\release.md
 ```
-
 ## Rollback
 
 ```powershell
 kubectl rollout undo deployment/<microservicio> -n circleguard-master
 ```
+
 
 
 
